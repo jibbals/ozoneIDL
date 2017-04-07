@@ -14,7 +14,7 @@
 ;   NOTES:
 ;       Salmon is the colour of desire
  
-FUNCTION check_sondes
+FUNCTION seasonal_tropozone
 
   sites=ptrarr(3)
   sites[0]=ptr_new(sondedata(/davis))

@@ -85,8 +85,8 @@ PRO flux_summary
   
   cgps_open, "flux_absolute.ps"
   cgPlot, [min(absbox),max(absbox)], /nodata, $
-    ytitle='molecules/cm2', YStyle=8, xrange=[-0.5,2.5], xtickv=[0,1,2],$
-    title="STT ozone flux", xtitle="", XStyle=8, xtickname=xticknames
+    ytitle='Ozone [molec/cm2]', YStyle=8, xrange=[-0.5,2.5], xtickv=[0,1,2],$
+    title="STT Ozone flux", xtitle="", XStyle=8, xtickname=xticknames
   for i=0,2 do $
     cgboxplot, *fluxes[i], xlocation=i, boxcolor=colr, $
       thick=2, /overplot, width=width ;, /fillbox ; can't see mean

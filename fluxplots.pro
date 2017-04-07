@@ -90,15 +90,13 @@ PRO fluxplots, melbourne=melbourne, davis=davis, macquarie=macquarie
     reT[i,*]   = interpol(reform(kels[i,*]),reform(alts[i,*]),TGrid, /nan) ; Kelvins
     reVMR[i,*] = interpol(reform(vmrs[i,*]),reform(alts[i,*]),TGrid, /nan)
   endfor
-  ; I forget why this works!? TODO: maybe it's 20mx1cmx1cm ?
-  Vol=2000 ; 20x1x1 m = 20 000 000cm3
   ; gas constant R
   R = 8.3144621 ; [cm3 MPa k-1 mol-1]
   R = R * 1.0d4 ; [cm3 hPa k-1 mol-1]
   ; number density(n_i / V): [ mol_{O_3} / cm^3 ] 
   ; from P_i = n_i R T / V, and P_i = P vmr
   ;   n_i / V = P vmr / ( R T ) = mol_{O_3} / cm^3 
-  density = reVMR * reP / R / reT * 6.02214129e23 ; in molecules/cm3
+  density = reVMR * reP / R / reT * 6.02214129d23 ; in molecules/cm3
   
   low=.5/delta           ;km freq min
   high=5/delta           ;km frequency max

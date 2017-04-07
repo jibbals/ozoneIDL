@@ -5,7 +5,7 @@
 ;       Look at the weather at and +- 6 hours of a particular julian time. weather maps are at 200, 300, 500hpa
 ;       
 ;   Example:
-;       ExamineMap(jday=julday(3,31,2010,0), /melbourne)
+;       ExamineMap, jday=julday(5,15,2010), /Davis
 ;
 PRO ExamineMap, jday, $
   imageprefix=imageprefix,$

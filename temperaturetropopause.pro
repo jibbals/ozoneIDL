@@ -21,11 +21,13 @@
 ;         TP = TemperatureTropopause(data.temperature, data.altitude, tpIndex)
 ;         ; TP will be the tropopause height, tpIndex will be it's index in the ozone.altitude array
 ;
+; UPDATES/HISTORY:
+;       Fri 31 03 2017 minimum height upped to 4km from 2km (minh = 4.0)
 FUNCTION temperaturetropopause, temp, Z, Index=Index
   
   ; lapse rate tropopause
   rate = -2.0 ; minimum dt/dz 
-  minh = 2.0 ; look above this height only(avoid ground effects)
+  minh = 4.0 ; look above this height only(avoid ground effects)
   dh = 2.0 ; average dt/dz over what height needs to beat the rate?
 
   ; first find dt/dz
