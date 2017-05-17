@@ -511,6 +511,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
     evtime = jtimes[evind]
     evppbv = reform(troposphere[evind, *])
     ; updatE: use event density rather than ppbv to show flux
+    ; update2: use ppbv for both plots
     evdens = reform(density[evind,*])
     evP = reform(sondes.pressure[evind,*])
     evtp= mintp[evind]
@@ -527,12 +528,12 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
     !p.charsize=2
     !p.font=0
     cgdisplay, 1200, 1200, wid=6
-    ;xlims=[20,100]
-    xlims=[min(evdens[yaxi],/nan), max(evdens[yaxi],/nan)]
+    xlims=[20,100]
+    ;xlims=[min(evdens[yaxi],/nan), max(evdens[yaxi],/nan)]
     ylims=[1,10]
-    cgplot, evdens[yaxi], yax, title=title1, $
+    cgplot, evppbv[yaxi], yax, title=title1, $
         xrange=xlims, yrange=ylims, $
-        ytitle='Altitude (km)', xtitle='Ozone (molecs/cm3)'
+        ytitle='Altitude (km)', xtitle='Ozone (ppbv)'
     c0=cgcolor('purple')
     c1=cgcolor('orange')
     ; line at tropopause: dashed, horizontal, red
@@ -545,8 +546,8 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
     evlb = lbs[evind]
     evub = ubs[evind]
     evex = tgrid[evlbind:evubind]
-    evbaseline=interpol(evdens[[evlbind,evubind]],[evlb,evub], evex )
-    evtopline =evdens[evlbind:evubind]
+    evbaseline=interpol(evppbv[[evlbind,evubind]],[evlb,evub], evex )
+    evtopline =evppbv[evlbind:evubind]
     
     ; overlay flux outline
     cgoplot, evtopline, tgrid[evlbind:evubind], linestyle=2, color=c1, thick=2
