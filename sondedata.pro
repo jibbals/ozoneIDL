@@ -6,13 +6,13 @@ FUNCTION SondeData, $
   ;
   if keyword_set(davis) then begin
     davisflag=davis
-    file='/home/jwg366/OzoneWork/Data/Davis/Sondes/davsondes.dat'
+    file='Data/davsondes.dat'
     restore, file
     data=davis
   endif else $  
   if keyword_set(macquarie) then begin
     macquarieflag=macquarie
-    file='/home/jwg366/OzoneWork/Data/Macquarie/Sondes/macsondes.dat'
+    file='Data/macsondes.dat'
     restore, file
     data=Macca
     ; one anomolously high ozone day seems wrong, unless it was released into a fire plume?
@@ -20,7 +20,7 @@ FUNCTION SondeData, $
     data.pressure[182,*] = data.pressure[182,*]+!values.f_nan
   endif else begin   ; melbourne default
     melbourneflag=1
-    file='/home/jwg366/OzoneWork/Data/Broadmeadows/Sondes/melbsondes.dat'
+    file='Data/melbsondes.dat'
     restore, file
     data=Melb
   endelse

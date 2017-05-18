@@ -14,9 +14,9 @@ PRO event_dates_to_csv
     for ii=0,3 do begin
       trop_def=([2,0,0,0])[ii]
       cutoff=([0.99,0.99,0.985,0.98])[ii]
-      fname=sitestr[i]+(['_orig', '_tpo3','_tpo3_co985','_tpo3_co980'])[ii]+'.csv'
+      fname='Data/'+sitestr[i]+(['_orig', '_tpo3','_tpo3_co985','_tpo3_co980'])[ii]+'.csv'
       ; for this station, pull out all the dates
-        events=getevents(data,trop_def=trop_def,cutoff_percentile=cutoff)
+      events=getevents(data,trop_def=trop_def,cutoff_percentile=cutoff)
       jtimes=events.jtime
       caldat, jtimes, Months, Days, Years, Hours
     
@@ -30,10 +30,10 @@ PRO event_dates_to_csv
         fire_influence[events.transportinds] = 1
       event_heights=events.locations
       event_tps=events.tp
-      data=transpose([[Years], [Months], [Days], [Hours], [tropozone], [flux], $
+      filedata=transpose([[Years], [Months], [Days], [Hours], [tropozone], [flux], $
         [event_heights], [event_tps], [fire_influence]])
       header=['YYYY','MM','DD','HH','tropozone','flux','peak','tp','fire']
-      write_csv, fname, data, header=header
+      write_csv, fname, filedata, header=header
     endfor
   endfor
 
