@@ -8,6 +8,7 @@
 ;       
 ;   Inputs:
 ;       sondes: structure returned from sondedata() function
+;       trop_def=0|1|2, ([ozone], lapse, minimum)
 ;   
 ;   Outputs: events
 ;       events: structure{Profiles, Locations, Magnitudes, indices, type}
@@ -16,6 +17,9 @@
 ;       getevents(sondedata(/melbourne), /example)
 ;           this will return melbourne events, as well as save an example picture
 ;           of the filtering process
+;
+;   Updates:
+;       17 may 2017: using ozone TP only through tp choice input trop_def=0
 ;
 
 FUNCTION regrid_profile, T, F, delta, top, $
@@ -93,8 +97,9 @@ END
 ; THE FUNCTION:
 ;
 function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE, $
-  analyse=analyse, example=example, show_storm=show_storm, PLOT_GRADIENTS=PLOT_GRADIENTS, $
-    FOURIER_SCALE=FOURIER_SCALE
+    analyse=analyse, example=example, show_storm=show_storm, $
+    PLOT_GRADIENTS=PLOT_GRADIENTS, FOURIER_SCALE=FOURIER_SCALE, $
+    TROP_DEF=TROP_DEF
 
   ; SET SOME THINGS HERE
   ;
@@ -109,6 +114,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
   ; Percentile to use determining cutoff
   IF N_ELEMENTS(CUTOFF_PERCENTILE) EQ 0 THEN CUTOFF_PERCENTILE=0.99
   IF N_ELEMENTS(FOURIER_SCALE) EQ 0 THEN FOURIER_SCALE=[0.5,5.0]
+  IF N_ELEMENTS(TROP_DEF) EQ 0 THEN TROP_DEF=0 ; default use ozone tp
   ; Drop required before we say the event is seperate from the stratosphere
   GRADIENT_DROP=20
   ; value of ozone ppb in the 3km above the event peak must drop below this
@@ -132,8 +138,11 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
   years = jessedate(jtimes)   ; julian time array to array of 'years from start of array'
   
   ; minimum tropopause = 0 if either tp is NAN
-  mintp=min( [[tplr],[tpo3]], dimension=2, /nan )
-  if n_elements(mintp) lt n_elements(tpo3) then stop
+  alltp=min( [[tplr],[tpo3]], dimension=2, /nan )
+  IF TROP_DEF EQ 0 THEN alltp=tpo3
+  IF TROP_DEF EQ 1 THEN alltp=tplr
+  
+  if n_elements(alltp) lt n_elements(tpo3) then stop
   
   N_profs=n_elements(ppbv[*,0]) ; how many profiles
   N_alts=n_elements(ppbv[0,*])  ; how many altitudes
@@ -188,7 +197,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
   
   ; for each profile
   for i=0,N_profs-1 do begin
-    tpbound=mintp[i]
+    tpbound=alltp[i]
     if not finite(tpbound) then continue  ; ignore columns with no tp
     if tpbound lt 2 then continue ; ignore columns with tp of 2 or less
     ; Regrid the first 14km
@@ -307,7 +316,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
           yaxi = where(tgrid ge 2 and tgrid le 14)
           yax  = tgrid[yaxi]
           evtime = jtimes[ind]
-          evtp= mintp[ind]
+          evtp= alltp[ind]
           evFT = reform(SFTo3[ind,*])
           caldat, evtime, mm,dd,yy
           datestr=string(yy,format='(i04)')+string(mm,format='(i02)')+string(dd,format='(i02)')
@@ -335,7 +344,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
         yaxi = where(tgrid ge 2 and tgrid le 14)
         yax  = tgrid[yaxi]
         evtime = jtimes[ind]
-        evtp= mintp[ind]
+        evtp= alltp[ind]
         evFT = reform(SFTo3[ind,*])
         
         caldat, evtime, mm,dd,yy
@@ -365,7 +374,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
     ;
     flux[ind]=int_tabulated(tgrid[lbinds[ind]:ubinds[ind]],area)
     ; integrate density column UP TO TROPOPAUSE 
-    evtpind=max(where(tgrid le mintp[ind]))
+    evtpind=max(where(tgrid le alltp[ind]))
     tropozone[ind] = int_tabulated(tgrid[0:evtpind], evdens[0:evtpind])
     ; since we integrate over the vertical (which is in kms) this is now in
     ; molecules kilometres / cm3  so we just multiply by cms/kilometre
@@ -388,7 +397,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
       yax  = tgrid[yaxi]
       evtime = jtimes[evind]
       evppbv = reform(troposphere[evind, *])
-      evtp= mintp[evind]
+      evtp= alltp[evind]
       evFT = reform(SFTo3[evind,*])
       
       caldat, evtime, mm,dd,yy
@@ -404,7 +413,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
   ; Determine event types based on distance from tropopause
   ; 0-2km = shallow, 2-4 = medium, 4+ = deep
   ;
-  distance=mintp-locs
+  distance=alltp-locs
   bins=[2,4]  ; 0 to 2 is shallow, 2 to 4 is mediumn, 4+ is deep event
   type = (distance[finalevents] gt bins[0]) + (distance[finalevents] ge bins[1])
   
@@ -485,7 +494,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
     lat:sondes.lat,$                        ;
     lon:sondes.lon,$                        ;
     height:sondes.height,$                  ; altitude in kms
-    tp:mintp[finalevents], $                ; minimum tropopause
+    tp:alltp[finalevents], $                ; chosen tropopause definition
     locations:locs[finalevents], $          ; peak ozone height in km
     density:density[finalevents,*], $       ; column ozone in molecs/cm3
     tropozone:tropozone[finalevents], $     ; tropospheric column ozone in molecs/cm2
@@ -514,7 +523,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
     ; update2: use ppbv for both plots
     evdens = reform(density[evind,*])
     evP = reform(sondes.pressure[evind,*])
-    evtp= mintp[evind]
+    evtp= alltp[evind]
     evFT = reform(SFTo3[evind,*])
     
     caldat, evtime, mm,dd,yy
@@ -657,7 +666,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
       evfilt=reform(SFTo3[ind,*])
       evtest=reform(testarr[ind,*])
       evloc=locs[ind]
-      tpind=max(where(tgrid le mintp[ind]))
+      tpind=max(where(tgrid le alltp[ind]))
       ; bounds
       lbind = lbinds[ind]
       lb = lbs[ind] 
@@ -669,7 +678,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
       !p.charsize=1.5
       !X.margin=[10,2]
       !Y.margin=[2,2]
-      xrange=[0,mintp[ind]+1]
+      xrange=[0,alltp[ind]+1]
       
       ; plot profile
       ;
@@ -698,7 +707,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
         xtitle='altitude(km)', $
         xrange=xrange
       ; red line along threshold
-      cgoplot, [2, mintp[ind]-1], fltarr(2)+cutoff, color='red'
+      cgoplot, [2, alltp[ind]-1], fltarr(2)+cutoff, color='red'
       ; dashed line along zero axis
       cgoplot, xrange, fltarr(2), linestyle=2, color='grey'
       ; marks where event intersects zeros
