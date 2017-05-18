@@ -11,10 +11,14 @@ PRO event_dates_to_csv
   ;header=['Year','Month', 'Day', 'Hour']
   for i=0,2 do begin
     data=*(dataptr[i])
-    for ii=0,3 do begin
-      trop_def=([2,0,0,0])[ii]
-      cutoff=([0.99,0.99,0.985,0.98])[ii]
-      fname='Data/'+sitestr[i]+(['_orig', '_tpo3','_tpo3_co985','_tpo3_co980'])[ii]+'.csv'
+    co_arr=[0.99, 0.99, 0.985, 0.98, 0.97, 0.96, 0.95]
+    trop_def_arr=intarr(n_elements(co_arr))
+    trop_def_arr[0]=2 ; only use mintp for 'orig'
+    name_arr=['_orig', '_tpo3','_co985','_co98','_co97','_co96','_co95']
+    for ii=0,n_elements(co_arr)-1 do begin
+      trop_def=trop_def_arr[ii]
+      cutoff=co_arr[ii]
+      fname='Data/'+sitestr[i]+name_arr[ii]+'.csv'
       ; for this station, pull out all the dates
       events=getevents(data,trop_def=trop_def,cutoff_percentile=cutoff)
       jtimes=events.jtime
