@@ -112,7 +112,7 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
   ; Upper boundary for determining cutoff region
   UPPERCLIP_CUTOFF=1.0
   ; Percentile to use determining cutoff
-  IF N_ELEMENTS(CUTOFF_PERCENTILE) EQ 0 THEN CUTOFF_PERCENTILE=0.99
+  IF N_ELEMENTS(CUTOFF_PERCENTILE) EQ 0 THEN CUTOFF_PERCENTILE=0.95
   IF N_ELEMENTS(FOURIER_SCALE) EQ 0 THEN FOURIER_SCALE=[0.5,5.0]
   IF N_ELEMENTS(TROP_DEF) EQ 0 THEN TROP_DEF=0 ; default use ozone tp
   ; Drop required before we say the event is seperate from the stratosphere
@@ -253,35 +253,41 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
   if keyword_set(verbose) then $
     print, n_events,' events detected'
 
-  ; DETERMINE FLUX CAPACITOR
-  ; 
+  ; DETERMINE event flux region 
+  ; updated 22/5/17: back to using threshold exceedence range with maximum filtered value
+  ;     (instead of lowest exceedence range...)
+
   ; for each event
   tpcount=0 & gradcount=0
   foreach ind, eventinds, ii do begin
     evtrop=reform(troposphere[ind,*])
     evfilt=reform(SFTo3[ind,*])
     evdens=reform(density[ind,*])
-    evlocold=locs[ind]
-    evlocindold=where(TGrid eq evlocold)
+    evlocind=(where(TGrid eq locs[ind]))[0]
+    evloc=TGrid[evlocind]
+    ; OLD WAY:::::::::::::
+    ;evlocold=locs[ind]
+    ;evlocindold=where(TGrid eq evlocold)
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ; we determine event peak using max ozone within lowest threshhold exceedence range
     ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-    peak_filtered=reform(SFTo3_for_detection[ind,*])
-    over_thresh= where(peak_filtered ge cutoff)
-    below_thresh=where(peak_filtered lt cutoff)
-    peak_index_low=over_thresh[0]
-    first_below_thresh= (where(below_thresh gt peak_index_low))[0]
-    peak_index_high=below_thresh[first_below_thresh]
+    ;peak_filtered=reform(SFTo3_for_detection[ind,*])
+    ;over_thresh= where(peak_filtered ge cutoff)
+    ;below_thresh=where(peak_filtered lt cutoff)
+    ;peak_index_low=over_thresh[0]
+    ;first_below_thresh= (where(below_thresh gt peak_index_low))[0]
+    ;peak_index_high=below_thresh[first_below_thresh]
     ; handle when the profile does not drop back below the threshold
-    if first_below_thresh eq -1 then peak_index_high=over_thresh[-1]
-    if peak_index_high lt peak_index_low then begin
-      print, "trouble determining peak:" 
-      stop
-    endif
-    peak_o3=max(evtrop[peak_index_low:peak_index_high])
-    evlocind=(where(evtrop eq peak_o3))[0]
-    evloc=(TGrid[evlocind])
-    locs[ind]=evloc
+    ;if first_below_thresh eq -1 then peak_index_high=over_thresh[-1]
+    ;if peak_index_high lt peak_index_low then begin
+    ;  print, "trouble determining peak:" 
+    ;  stop
+    ;endif
+    ;peak_o3=max(evtrop[peak_index_low:peak_index_high])
+    ;evlocind=(where(evtrop eq peak_o3))[0]
+    ;evloc=(TGrid[evlocind])
+    ;locs[ind]=evloc
+    ; END OLD WAY:::::::::::::::
     ; lower bound is first zero below 'event' ozone values in the filtered profile
     lbinds[ind] = max(where(evfilt le 0 and tgrid lt evloc))
     if lbinds[ind] eq -1 then begin
@@ -514,65 +520,67 @@ function getevents, sondes, verbose=verbose, CUTOFF_PERCENTILE=CUTOFF_PERCENTILE
   if keyword_set(example) then begin
     ; Put out an example of the bandfilter
     ;
-    evind = finalevents[0]
-    yaxi = where(tgrid ge 2 and tgrid le 14)
-    yax  = tgrid[yaxi]
-    evtime = jtimes[evind]
-    evppbv = reform(troposphere[evind, *])
-    ; updatE: use event density rather than ppbv to show flux
-    ; update2: use ppbv for both plots
-    evdens = reform(density[evind,*])
-    evP = reform(sondes.pressure[evind,*])
-    evtp= alltp[evind]
-    evFT = reform(SFTo3[evind,*])
-    
-    caldat, evtime, mm,dd,yy
-    title1="Ozone at Melbourne on "+string(yy,format='(i04)')+'/'+ $
-        string(mm,format='(i02)')+'/'+string(dd,format='(i02)')
+    foreach evind,finalevents,exi do begin
+      ;evind = finalevents[exi]
+      yaxi = where(tgrid ge 2 and tgrid le 14)
+      yax  = tgrid[yaxi]
+      evtime = jtimes[evind]
+      evppbv = reform(troposphere[evind, *])
+      ; updatE: use event density rather than ppbv to show flux
+      ; update2: use ppbv for both plots
+      evdens = reform(density[evind,*])
+      evP = reform(sondes.pressure[evind,*])
+      evtp= alltp[evind]
+      evFT = reform(SFTo3[evind,*])
+      
+      caldat, evtime, mm,dd,yy
+      title1="Ozone at "+sitename+" on "+string(yy,format='(i04)')+'/'+ $
+          string(mm,format='(i02)')+'/'+string(dd,format='(i02)')
 
-    ; show the profile
-    name='images/filtereg.ps'
-    cgps_open, name
-    !p.multi=[0,2,1]
-    !p.charsize=2
-    !p.font=0
-    cgdisplay, 1200, 1200, wid=6
-    xlims=[20,100]
-    ;xlims=[min(evdens[yaxi],/nan), max(evdens[yaxi],/nan)]
-    ylims=[1,10]
-    cgplot, evppbv[yaxi], yax, title=title1, $
-        xrange=xlims, yrange=ylims, $
-        ytitle='Altitude (km)', xtitle='Ozone (ppbv)'
-    c0=cgcolor('purple')
-    c1=cgcolor('orange')
-    ; line at tropopause: dashed, horizontal, red
-    cgoplot, [xlims[0], xlims[-1]], [evtp, evtp], $
-        linestyle=2, color=c0
-
-    ; flux calculations
-    evlbind = lbinds[evind]
-    evubind = ubinds[evind]
-    evlb = lbs[evind]
-    evub = ubs[evind]
-    evex = tgrid[evlbind:evubind]
-    evbaseline=interpol(evppbv[[evlbind,evubind]],[evlb,evub], evex )
-    evtopline =evppbv[evlbind:evubind]
+      ; show the profile
+      name='images/filters/filtereg_'+sitename+string(exi,format='(i03)')+'.png'
+      cgps_open, name
+      !p.multi=[0,2,1]
+      !p.charsize=2
+      !p.font=0
+      cgdisplay, 1200, 1200, wid=6
+      xlims=[20,120]
+      ;xlims=[min(evdens[yaxi],/nan), max(evdens[yaxi],/nan)]
+      ylims=[1,14]
+      cgplot, evppbv[yaxi], yax, title=title1, $
+          xrange=xlims, yrange=ylims, $
+          ytitle='Altitude (km)', xtitle='Ozone (ppbv)'
+      c0=cgcolor('purple')
+      c1=cgcolor('orange')
+      ; line at tropopause: dashed, horizontal, red
+      cgoplot, [xlims[0], xlims[-1]], [evtp, evtp], $
+          linestyle=2, color=c0
     
-    ; overlay flux outline
-    cgoplot, evtopline, tgrid[evlbind:evubind], linestyle=2, color=c1, thick=2
-    cgoplot, evbaseline, tgrid[evlbind:evubind], linestyle=2, color=c1, thick=2
+      ; flux calculations
+      evlbind = lbinds[evind]
+      evubind = ubinds[evind]
+      evlb = lbs[evind]
+      evub = ubs[evind]
+      evex = tgrid[evlbind:evubind]
+      evbaseline=interpol(evppbv[[evlbind,evubind]],[evlb,evub], evex )
+      evtopline =evppbv[evlbind:evubind]
     
-    ; Add plot of transformed profile, against zeroline
-    cgplot, evFT, tgrid, $
-      title='Fourier transformed profile', ytitle='Altitude (km)', $
-      yrange=ylims, xtitle='perturbation (ppbv)'
-    cgoplot, [0,0], ylims, color=c0, linestyle=2
-    cgoplot, [cutoff, cutoff], ylims, color=c1, linestyle=2
-    ; line at tropopause: dashed, horizontal, red
-    cgoplot, [-30, 30], [evtp, evtp], $
+      ; overlay flux outline
+      cgoplot, evtopline, tgrid[evlbind:evubind], linestyle=2, color=c1, thick=2
+      cgoplot, evbaseline, tgrid[evlbind:evubind], linestyle=2, color=c1, thick=2
+    
+      ; Add plot of transformed profile, against zeroline
+      cgplot, evFT, tgrid, $
+        title='Fourier transformed profile', ytitle='Altitude (km)', $
+        yrange=ylims, xtitle='perturbation (ppbv)'
+      cgoplot, [0,0], ylims, color=c0, linestyle=2
+      cgoplot, [cutoff, cutoff], ylims, color=c1, linestyle=2
+      ; line at tropopause: dashed, horizontal, red
+      cgoplot, [-30, 30], [evtp, evtp], $
         linestyle=2, color=c0
-    cgps_close
-    !p.multi=0
+      cgps_close
+      !p.multi=0
+    endforeach
   endif
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
