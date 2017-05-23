@@ -162,7 +162,9 @@ PRO SA_READ_ERA_INTERIM,ERA_Interim,FILE=FILE $
         ,zonal_velocity:zonal_velocity $
         ,meridional_velocity:meridional_velocity $
         ,divergence:divergence}
-
+  ; Clean up memory hopefully!?
+  ; Update: 23/5/2017 by jwg
+  ncdf_close, fd
   RETURN
 
 END

@@ -5,9 +5,9 @@
 ;       Look at the wind and gph map at one jday and pressure level
 ;       
 ;   Example:
-;       windmap, julday(2,3,2005,0),/highres, /melbourne
+;       makemap, julday(2,3,2005,0),/highres, /melbourne
 ;           shows GPH and wind map
-;       windmap, julday(1,13,2010), /highres, /melb, maptype=2
+;       makemap, julday(1,13,2010), /highres, /melb, maptype=2
 ;           shows PVU map
 ;
 ;   Prerequisites:

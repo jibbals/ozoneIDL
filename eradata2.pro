@@ -30,7 +30,7 @@ FUNCTION eradata2, dates, $
     
   ; new datafiles look like this 
   ;OzoneWork/Data/ERAI/ERAI_2004_pl.nc 
-  path='../Data/ERAI/'
+  path='Data/ERAI/'
   ptrn='ERAI_*_pl.nc'
   ; if only looking for one day, match the year
   if n_elements(dates) eq 1 then ptrn='ERAI_'+ystr+'_pl.nc'

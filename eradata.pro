@@ -32,13 +32,13 @@ FUNCTION eradata, dates, $
   endif
 
   if keyword_set(davis) then begin
-    path='../Data/Davis/ERA/Pressure/'
+    path='Data/ERAI/Davis/'
   endif else $  
   if keyword_set(macquarie) then begin
-    path='../Data/Macquarie/ERA/Pressure/'
+    path='Data/ERAI/Macquarie/'
   endif else begin   ; melbourne default
   ;if keyword_set(melbourne) then begin
-    path='../Data/Broadmeadows/ERA/Pressure/'
+    path='Data/ERAI/Melbourne/'
   endelse
   
   ; just get the files which are synoptic weather format
